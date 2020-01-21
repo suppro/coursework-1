@@ -17,6 +17,8 @@ namespace Raskatova1
     }
     class Program
     {
+        public static SQLiteCommand CMD;
+
         public static List<Result> NewResult(int numberOfRunners, Random rnd, string fileName)
         {
             int age; int start; int finish; int total; string rank;
@@ -198,7 +200,7 @@ namespace Raskatova1
                 }
                 else if (answer == "0")
                 {
-                    throw new Exception("Выйти");
+                    throw new Exception("Выход из меню");
                 }
                 else
                 {
@@ -207,24 +209,23 @@ namespace Raskatova1
                 }
             }
         }
+
         public static void ResultToDB(List<Result> listResult, SQLiteCommand CMD)
         {
             for (int i = 0; i < listResult.Count; i++)
             {
                 CMD.CommandText = "insert into Results(Name, TimeOfStart, TimeOfFinish) values(@name, @timeofstart, @timeoffinish)";
-                CMD.Parameters.Add("@name", System.Data.DbType.String);
-                CMD.Parameters["@name"].Value = listResult[i].FullName;
-                CMD.Parameters.Add("@timeofstart", System.Data.DbType.Int32);
-                CMD.Parameters["@timeofstart"].Value = listResult[i].TimeOfStart;
-                CMD.Parameters.Add("@timeoffinish", System.Data.DbType.Int32);
-                CMD.Parameters["@timeoffinish"].Value = listResult[i].TimeOfFinish;
+                CMD.Parameters.Add("@name", System.Data.DbType.String).Value = listResult[i].FullName;
+                CMD.Parameters.Add("@timeofstart", System.Data.DbType.Int32).Value = listResult[i].TimeOfStart;
+                CMD.Parameters.Add("@timeoffinish", System.Data.DbType.Int32).Value = listResult[i].TimeOfFinish;
                 CMD.ExecuteNonQuery();
             }
         }
+
         static void Main()
         {
-            string fileName = "C:\\Users\\Луна\\source\\repos\\Raskatova1\\Raskatova1\\names.txt";
-            string dbName = "C:\\Users\\Луна\\source\\repos\\Raskatova1\\Raskatova1\\ResultsDB.db";
+            string fileName = "../../names.txt";
+            string dbName = "../../ResultsDB.db";
             if (!File.Exists(fileName))
             {
                 Console.WriteLine("Файла с именами не существует. Закрытие программы...");
@@ -245,22 +246,30 @@ namespace Raskatova1
 
                 List<Result> listResult = NewResult(numberOfRunners, rnd, fileName);
 
-                SQLiteCommand CMD = DB.CreateCommand();
+                CMD = DB.CreateCommand();
                 ResultToDB(listResult, CMD);
 
                 Console.WriteLine("Результаты загружены в базу данных. Запуск меню...");
                 Console.ReadKey();
 
                 Menu(listResult, subMenu, numberOfRunners);
-
-                DB.Close();
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine("Ошибка подключения базы данных. Закрытие программы...");
+                Console.ReadKey();
+                return;
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                Console.WriteLine("Ошибка подключения к базе данных. Закрытие программы...");
                 Console.ReadKey();
                 return;
+            }
+            finally
+            {
+                DB.Close();
             }
         }
     }
