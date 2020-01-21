@@ -244,7 +244,7 @@ namespace Raskatova1
                 int numberOfRunners = rnd.Next(5, 10);
                 bool subMenu = false;
 
-                List<Result> listResult = NewResult(numberOfRunners, rnd, fileName);
+                List<Result> listResult = NewResult(numberOfRunners, rnd, fileName); 
 
                 CMD = DB.CreateCommand();
                 ResultToDB(listResult, CMD);
