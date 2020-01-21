@@ -17,12 +17,11 @@ namespace Raskatova1
     }
     class Program
     {
-        public static SQLiteCommand CMD = new SQLiteCommand();
         public static List<Result> NewResult(int numberOfRunners, Random rnd, string fileName)
-        {                 
+        {
             int age; int start; int finish; int total; string rank;
             List<string> file = File.ReadLines(fileName).ToList();
-            List<Result> listResult = new List<Result>();         
+            List<Result> listResult = new List<Result>();
             for (int i = 0; i < numberOfRunners; ++i)
             {
                 age = rnd.Next(18, 80);
@@ -34,7 +33,7 @@ namespace Raskatova1
             }
             listResult.Sort((Result x, Result y) => { return x.TotalTime.CompareTo(y.TotalTime); });
             return listResult;
-        }    
+        }
         public static string FullName(List<string> file, Random rnd)
         {
             int count = file.Count();
@@ -69,7 +68,7 @@ namespace Raskatova1
             else if (rank == "Любитель") { finish = rnd.Next(2341, 3301); }
             else if (rank == "Атлет") { finish = rnd.Next(1951, 2340); }
             else if (rank == "Элита") { finish = rnd.Next(1740, 1950); }
-            else { throw new Exception("Ранг не определен"); }               
+            else { throw new Exception("Ранг не определен"); }
             return finish;
         }
         public static string AtleteRank(int age, Random rnd)
@@ -89,7 +88,7 @@ namespace Raskatova1
                 else if (setRank > 0.15 && setRank <= 0.5) { rank = "Любитель"; }
                 else if (setRank > 0.5 && setRank <= 2) { rank = "Начинающий"; }
                 else { throw new Exception("Ранг не определен"); }
-                }
+            }
             return rank;
         }
         public static void SortResult(List<Result> listResult, int ageMin, int ageMax, bool subMenu, int numberOfRunners)
@@ -128,11 +127,12 @@ namespace Raskatova1
                 {
                     Menu(listResult, false, numberOfRunners);
                 }
-                else {
+                else
+                {
                     Console.WriteLine("Ошибка ввода: данного варианта ответа не существует. Возврат в подменю...");
                     Console.ReadKey();
                     Menu(listResult, true, numberOfRunners);
-                }                    
+                }
             }
             else
             {
@@ -144,10 +144,11 @@ namespace Raskatova1
         public static void Menu(List<Result> listResult, bool subMenu, int numberOfRunners)
         {
             string answer;
-            
+
             while (true)
             {
-                if (!subMenu) {
+                if (!subMenu)
+                {
                     Console.Clear();
                     Console.WriteLine("Забег на 10 км.");
                     Console.WriteLine("Всего участников забега - " + numberOfRunners);
@@ -155,9 +156,9 @@ namespace Raskatova1
                     Console.WriteLine("Для вывода результатов забега введите 2");
                     Console.WriteLine("Для выхода из программы введите 0");
                     answer = Console.ReadLine();
-                } 
+                }
                 else answer = "1";
-                
+
                 if (answer == "1") //|| subMenu
                 {
                     Console.Clear();
@@ -206,21 +207,24 @@ namespace Raskatova1
                 }
             }
         }
-        public static void ResultToDB (List<Result> listResult, SQLiteCommand CMD)
+        public static void ResultToDB(List<Result> listResult, SQLiteCommand CMD)
         {
             for (int i = 0; i < listResult.Count; i++)
-            {       
+            {
                 CMD.CommandText = "insert into Results(Name, TimeOfStart, TimeOfFinish) values(@name, @timeofstart, @timeoffinish)";
-                CMD.Parameters.Add("@name", System.Data.DbType.String).Value = listResult[i].FullName;
-                CMD.Parameters.Add("@timeofstart", System.Data.DbType.Int32).Value = listResult[i].TimeOfStart;
-                CMD.Parameters.Add("@timeoffinish", System.Data.DbType.Int32).Value = listResult[i].TimeOfFinish;
+                CMD.Parameters.Add("@name", System.Data.DbType.String);
+                CMD.Parameters["@name"].Value = listResult[i].FullName;
+                CMD.Parameters.Add("@timeofstart", System.Data.DbType.Int32);
+                CMD.Parameters["@timeofstart"].Value = listResult[i].TimeOfStart;
+                CMD.Parameters.Add("@timeoffinish", System.Data.DbType.Int32);
+                CMD.Parameters["@timeoffinish"].Value = listResult[i].TimeOfFinish;
                 CMD.ExecuteNonQuery();
             }
         }
         static void Main()
         {
-            string fileName = "C:\\Users\\Луна\\source\\repos\\Raskatova1\\Raskatova1\\names.txt";
-            string dbName = "C:\\Users\\Луна\\source\\repos\\Raskatova1\\Raskatova1\\ResultsDB.db";
+            string fileName = "C:\\Users\\user\\Desktop\\share\\gitrepos\\clonned\\Raskatova1\\Raskatova1\\names.txt";
+            string dbName = "C:\\Users\\user\\Desktop\\share\\gitrepos\\clonned\\Raskatova1\\Raskatova1\\ResultsDB.db";
             if (!File.Exists(fileName))
             {
                 Console.WriteLine("Файла с именами не существует. Закрытие программы...");
@@ -228,44 +232,36 @@ namespace Raskatova1
                 return;
             }
             SQLiteConnection DB = new SQLiteConnection("Data Source=" + dbName + "; " + "Version=3");
-            try { DB.Open(); }
-            catch (Exception)
+            try
             {
+                DB.Open();
+
+                Console.WriteLine("Соединение с бд установлено. Загружаются новые результаты...");
+                Console.ReadKey();
+
+                Random rnd = new Random();
+                int numberOfRunners = rnd.Next(5, 10);
+                bool subMenu = false;
+
+                List<Result> listResult = NewResult(numberOfRunners, rnd, fileName);
+
+                SQLiteCommand CMD = DB.CreateCommand();
+                ResultToDB(listResult, CMD);
+
+                Console.WriteLine("Результаты загружены в базу данных. Запуск меню...");
+                Console.ReadKey();
+
+                Menu(listResult, subMenu, numberOfRunners);
+
+                DB.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
                 Console.WriteLine("Ошибка подключения к базе данных. Закрытие программы...");
                 Console.ReadKey();
                 return;
             }
-            Console.WriteLine("Соединение с бд установлено. Загружаются новые результаты...");
-            Console.ReadKey();
-            
-            CMD.CommandText = "delete from Results";
-            
-            Random rnd = new Random();
-            int numberOfRunners = rnd.Next(5, 10);
-            bool subMenu = false;
-            
-            List<Result> listResult;       
-            
-            try { listResult = NewResult(numberOfRunners, rnd, fileName); }
-            catch (Exception)
-            {
-                Console.WriteLine("Ошибка генерации результатов. Закрытие программы...");
-                Console.ReadKey();
-                return;
-            }
-            
-            try { ResultToDB(listResult, CMD); }
-            catch (Exception)
-            {
-                Console.WriteLine("Ошибка загрузки результатов в базу данных. Закрытие программы...");
-                Console.ReadKey();
-                return;
-            }
-            Console.WriteLine("Результаты загружены в базу данных. Запуск меню...");
-            Console.ReadKey();
-            try { Menu(listResult, subMenu, numberOfRunners); }
-            catch (Exception) { return; }
-            DB.Close();
         }
     }
 }
