@@ -42,7 +42,7 @@ namespace Raskatova1
             file.RemoveAt(skip);
             return line;
         }
-        public static void AgeResult(List<Result> listResult, int ageMin, int ageMax)
+        public static void AgeResult(List<Result> listResult, int ageMin, int ageMax) //сделать вывод из таблицы тут
         {
             int timeWiner = 20000;
             int ageWinner = 0;
@@ -91,7 +91,7 @@ namespace Raskatova1
             }
             return rank;
         }
-        public static void SortResult(List<Result> listResult, int ageMin, int ageMax, bool subMenu, int numberOfRunners)
+        public static void SortResult(List<Result> listResult, int ageMin, int ageMax, bool subMenu, int numberOfRunners) //сделать вывод из таблицы тут
         {
             var allResultInAge = from age in listResult
                                  where age.Age >= ageMin && age.Age <= ageMax
