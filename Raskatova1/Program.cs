@@ -223,8 +223,8 @@ namespace Raskatova1
         }
         static void Main()
         {
-            string fileName = "C:\\Users\\Луна\\source\\repos\\Raskatova1\\Raskatova1\\names.txt";
-            string dbName = "C:\\Users\\Луна\\source\\repos\\Raskatova1\\Raskatova1\\ResultsDB.db";
+            string fileName = "C:\\Users\\user\\Desktop\\share\\gitrepos\\clonned\\Raskatova1\\Raskatova1\\names.txt";
+            string dbName = "C:\\Users\\user\\Desktop\\share\\gitrepos\\clonned\\Raskatova1\\Raskatova1\\ResultsDB.db";
             if (!File.Exists(fileName))
             {
                 Console.WriteLine("Файла с именами не существует. Закрытие программы...");
