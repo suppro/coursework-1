@@ -212,14 +212,15 @@ namespace Raskatova1
         }
         static void Main()
         {
-            string fileName = "names.txt";
+            string fileName = "C:\\Users\\Луна\\source\\repos\\Raskatova1\\Raskatova1\\names.txt";
+            string dbName = "C:\\Users\\Луна\\source\\repos\\Raskatova1\\Raskatova1\\ResultsDB.db";
             if (!File.Exists(fileName))
             {
                 Console.WriteLine("Файла с именами не существует. Закрытие программы...");
                 Console.ReadKey();
                 return;
             }
-            SQLiteConnection DB = new SQLiteConnection("Data Source=Results.db; Version=3");
+            SQLiteConnection DB = new SQLiteConnection("Data Source=" + dbName + "Version=3");
             try { DB.Open(); }
             catch (Exception)
             {
