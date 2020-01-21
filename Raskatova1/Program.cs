@@ -220,7 +220,7 @@ namespace Raskatova1
                 Console.ReadKey();
                 return;
             }
-            SQLiteConnection DB = new SQLiteConnection("Data Source=" + dbName + "Version=3");
+            SQLiteConnection DB = new SQLiteConnection("Data Source=" + dbName + "; " + "Version=3");
             try { DB.Open(); }
             catch (Exception)
             {
