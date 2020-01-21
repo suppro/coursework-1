@@ -19,6 +19,7 @@ namespace Raskatova1
     class Program
     {
         public static SQLiteCommand CMD;
+        public static SQLiteDataReader RD;
 
         public static List<Result> NewResult(int numberOfRunners, Random rnd, string fileName)
         {
@@ -157,6 +158,7 @@ namespace Raskatova1
                     Console.WriteLine("Всего участников забега - " + numberOfRunners);
                     Console.WriteLine("Для вывода результатов в возрастных группах введите 1");
                     Console.WriteLine("Для вывода результатов забега введите 2");
+                    Console.WriteLine("Для вывода результатов за всю историю соревнований 3");
                     Console.WriteLine("Для выхода из программы введите 0");
                     answer = Console.ReadLine();
                 }
@@ -199,6 +201,11 @@ namespace Raskatova1
                     Console.WriteLine("Результаты:");
                     SortResult(listResult, 18, 80, false, numberOfRunners);
                 }
+                else if (answer == "3")
+                {
+                    Console.WriteLine("Результаты атлетов за всю историю соревнований:");
+                    ReadBD(RD);
+                }
                 else if (answer == "0")
                 {
                     throw new Exception("Выход из меню");
@@ -215,14 +222,34 @@ namespace Raskatova1
         {
             for (int i = 0; i < listResult.Count; i++)
             {
-                CMD.CommandText = "insert into Results(Name, TimeOfStart, TimeOfFinish) values(@name, @timeofstart, @timeoffinish)";
+                CMD.CommandText = "insert into Results(Name, Age, TimeOfStart, TimeOfFinish, TimeOfTotal) values(@name, @age, @timeofstart, @timeoffinish, @timeoftotal)";
                 CMD.Parameters.Add("@name", System.Data.DbType.String).Value = listResult[i].FullName;
+                CMD.Parameters.Add("@age", System.Data.DbType.String).Value = listResult[i].Age;
                 CMD.Parameters.Add("@timeofstart", System.Data.DbType.Int32).Value = listResult[i].TimeOfStart;
                 CMD.Parameters.Add("@timeoffinish", System.Data.DbType.Int32).Value = listResult[i].TimeOfFinish;
+                CMD.Parameters.Add("@timeofftotal", System.Data.DbType.Int32).Value = listResult[i].TotalTime;
                 CMD.ExecuteNonQuery();
             }
         }
-
+        public static void ReadBD(SQLiteDataReader RD)
+        {
+            Console.WriteLine("Имя бегуна\t\t" + "Возраст\t" + "Время старта\t" + "Время финиша\t" + "Результат");
+            var tsTotal = TimeSpan.FromSeconds(0); var tsFinish = TimeSpan.FromSeconds(0); var tsStart = TimeSpan.FromSeconds(0);
+            if (RD.HasRows)
+            {
+                while (RD.Read())
+                {
+                    tsTotal = TimeSpan.FromSeconds(Convert.ToInt32(RD["TimeOfTotal"]));
+                    tsStart = TimeSpan.FromSeconds(Convert.ToInt32(RD["TimeOfStart"]));
+                    tsFinish = TimeSpan.FromSeconds(Convert.ToInt32(RD["TimeOfFinish"]));
+                    Console.WriteLine($"{RD["Name"],-24}" + RD["Age"]
+                        + "\t" + "{0}:{1}:{2}" + "\t\t" + "{3}:{4}:{5}" + "\t\t" + "{6}:{7}:{8}",
+                        tsStart.Hours, tsStart.Minutes, tsStart.Seconds,
+                        tsFinish.Hours, tsFinish.Minutes, tsFinish.Seconds,
+                        tsTotal.Hours, tsTotal.Minutes, tsTotal.Seconds);
+                }
+            }
+        }
         static void Main()
         {
             string fileName = "C:\\Users\\Луна\\source\\repos\\Raskatova1\\Raskatova1\\names.txt";
@@ -234,6 +261,7 @@ namespace Raskatova1
                 return;
             }
             SQLiteConnection DB = new SQLiteConnection("Data Source=" + dbName + "; " + "Version=3");
+            
             try
             {
                 DB.Open();
@@ -249,6 +277,7 @@ namespace Raskatova1
 
                 CMD = DB.CreateCommand();
                 ResultToDB(listResult, CMD);
+                RD = CMD.ExecuteReader();
 
                 Console.WriteLine("Результаты загружены в базу данных. Запуск меню...");
                 Console.ReadKey();
