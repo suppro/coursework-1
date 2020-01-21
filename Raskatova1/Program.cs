@@ -17,6 +17,7 @@ namespace Raskatova1
     }
     class Program
     {
+        public static SQLiteCommand CMD = new SQLiteCommand();
         public static List<Result> NewResult(int numberOfRunners, Random rnd, string fileName)
         {                 
             int age; int start; int finish; int total; string rank;
@@ -205,10 +206,16 @@ namespace Raskatova1
                 }
             }
         }
-        public static void ResultToDB (List<Result> listResult, SQLiteConnection DB)
+        public static void ResultToDB (List<Result> listResult, SQLiteCommand CMD)
         {
-            
-            
+            for (int i = 0; i < listResult.Count; i++)
+            {       
+                CMD.CommandText = "insert into Results(Name, TimeOfStart, TimeOfFinish) values(@name, @timeofstart, @timeoffinish)";
+                CMD.Parameters.Add("@name", System.Data.DbType.String).Value = listResult[i].FullName;
+                CMD.Parameters.Add("@timeofstart", System.Data.DbType.Int32).Value = listResult[i].TimeOfStart;
+                CMD.Parameters.Add("@timeoffinish", System.Data.DbType.Int32).Value = listResult[i].TimeOfFinish;
+                CMD.ExecuteNonQuery();
+            }
         }
         static void Main()
         {
@@ -229,11 +236,12 @@ namespace Raskatova1
                 return;
             }
             Console.WriteLine("Соединение с бд установлено. Загружаются новые результаты...");
-            SQLiteCommand CMD = new SQLiteCommand();
-            CMD.CommandText = "delete from Results";
             Console.ReadKey();
+            
+            CMD.CommandText = "delete from Results";
+            
             Random rnd = new Random();
-            int numberOfRunners = rnd.Next(100, 900);
+            int numberOfRunners = rnd.Next(5, 10);
             bool subMenu = false;
             
             List<Result> listResult;       
@@ -245,9 +253,19 @@ namespace Raskatova1
                 Console.ReadKey();
                 return;
             }
-                      
+            
+            try { ResultToDB(listResult, CMD); }
+            catch (Exception)
+            {
+                Console.WriteLine("Ошибка загрузки результатов в базу данных. Закрытие программы...");
+                Console.ReadKey();
+                return;
+            }
+            Console.WriteLine("Результаты загружены в базу данных. Запуск меню...");
+            Console.ReadKey();
             try { Menu(listResult, subMenu, numberOfRunners); }
             catch (Exception) { return; }
+            DB.Close();
         }
     }
 }
