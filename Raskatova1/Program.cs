@@ -16,10 +16,10 @@ namespace Raskatova1
         public int TimeOfFinish { get; set; }
         public int TotalTime { get; set; }
     }
+
     class Program
     {
-        public static SQLiteCommand CMD;
-        public static SQLiteDataReader RD;
+        private static SQLiteConnection DB;
 
         public static List<Result> NewResult(int numberOfRunners, Random rnd, string fileName)
         {
@@ -114,6 +114,7 @@ namespace Raskatova1
                     tsFinish.Hours, tsFinish.Minutes, tsFinish.Seconds,
                     tsTotal.Hours, tsTotal.Minutes, tsTotal.Seconds);
             }
+
             CheckSubMenu(listResult, subMenu, numberOfRunners);
         }
         public static void CheckSubMenu(List<Result> listResult, bool subMenu, int numberOfRunners)
@@ -204,7 +205,8 @@ namespace Raskatova1
                 else if (answer == "3")
                 {
                     Console.WriteLine("Результаты атлетов за всю историю соревнований:");
-                    ReadBD(RD);
+                    ReadBD();
+                    Console.ReadKey();
                 }
                 else if (answer == "0")
                 {
@@ -218,8 +220,9 @@ namespace Raskatova1
             }
         }
 
-        public static void ResultToDB(List<Result> listResult, SQLiteCommand CMD)
+        public static void ResultToDB(List<Result> listResult)
         {
+            SQLiteCommand CMD = DB.CreateCommand();
             for (int i = 0; i < listResult.Count; i++)
             {
                 CMD.CommandText = "insert into Results(Name, Age, TimeOfStart, TimeOfFinish, TimeOfTotal) values(@name, @age, @timeofstart, @timeoffinish, @timeoftotal)";
@@ -227,14 +230,20 @@ namespace Raskatova1
                 CMD.Parameters.Add("@age", System.Data.DbType.String).Value = listResult[i].Age;
                 CMD.Parameters.Add("@timeofstart", System.Data.DbType.Int32).Value = listResult[i].TimeOfStart;
                 CMD.Parameters.Add("@timeoffinish", System.Data.DbType.Int32).Value = listResult[i].TimeOfFinish;
-                CMD.Parameters.Add("@timeofftotal", System.Data.DbType.Int32).Value = listResult[i].TotalTime;
+                CMD.Parameters.Add("@timeoftotal", System.Data.DbType.Int32).Value = listResult[i].TotalTime;
                 CMD.ExecuteNonQuery();
             }
+
+            CMD.Dispose();
         }
-        public static void ReadBD(SQLiteDataReader RD)
+
+        public static void ReadBD()
         {
+            TimeSpan tsTotal, tsFinish, tsStart;
+            SQLiteCommand CMD = new SQLiteCommand("select * from Results", DB);
+            SQLiteDataReader RD = CMD.ExecuteReader(); 
+
             Console.WriteLine("Имя бегуна\t\t" + "Возраст\t" + "Время старта\t" + "Время финиша\t" + "Результат");
-            var tsTotal = TimeSpan.FromSeconds(0); var tsFinish = TimeSpan.FromSeconds(0); var tsStart = TimeSpan.FromSeconds(0);
             if (RD.HasRows)
             {
                 while (RD.Read())
@@ -248,20 +257,25 @@ namespace Raskatova1
                         tsFinish.Hours, tsFinish.Minutes, tsFinish.Seconds,
                         tsTotal.Hours, tsTotal.Minutes, tsTotal.Seconds);
                 }
+
+                RD.Close();
+                CMD.Dispose();
             }
         }
+
         static void Main()
         {
-            string fileName = "C:\\Users\\Луна\\source\\repos\\Raskatova1\\Raskatova1\\names.txt";
-            string dbName = "C:\\Users\\Луна\\source\\repos\\Raskatova1\\Raskatova1\\ResultsDB.db";
+            string fileName = "../../names.txt";
+            string dbName = "../../ResultsDB.db";
+
             if (!File.Exists(fileName))
             {
                 Console.WriteLine("Файла с именами не существует. Закрытие программы...");
                 Console.ReadKey();
                 return;
             }
-            SQLiteConnection DB = new SQLiteConnection("Data Source=" + dbName + "; " + "Version=3");
-            
+
+            DB = new SQLiteConnection("Data Source=" + dbName + "; " + "Version=3"); 
             try
             {
                 DB.Open();
@@ -271,18 +285,15 @@ namespace Raskatova1
 
                 Random rnd = new Random();
                 int numberOfRunners = rnd.Next(5, 10);
-                bool subMenu = false;
 
                 List<Result> listResult = NewResult(numberOfRunners, rnd, fileName); 
 
-                CMD = DB.CreateCommand();
-                ResultToDB(listResult, CMD);
-                RD = CMD.ExecuteReader();
+                ResultToDB(listResult);
 
                 Console.WriteLine("Результаты загружены в базу данных. Запуск меню...");
                 Console.ReadKey();
 
-                Menu(listResult, subMenu, numberOfRunners);
+                Menu(listResult, false, numberOfRunners);
             }
             catch (SQLiteException ex)
             {
