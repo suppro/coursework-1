@@ -17,6 +17,31 @@ namespace Raskatova1
         public int TotalTime { get; set; }
     }
 
+    class Database
+    {
+        private SQLiteConnection CONN;
+        private string FileName;
+
+        Database(string FileName)
+        {
+            this.FileName = FileName;
+        }
+
+        public void OpenConnection()
+        {
+            CONN = new SQLiteConnection("Data Source=" + FileName + "; " + "Version=3");
+            CONN.Open();
+        }
+
+        public void CloseConnection()
+        {
+            CONN.Close();
+        }
+
+        public string GetFileName() { return FileName;  }
+        public SQLiteConnection GetCONN() { return CONN; } 
+    }
+
     class Program
     {
         private static SQLiteConnection DB;
