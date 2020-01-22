@@ -7,44 +7,9 @@ using System.Data.SQLite;
 
 namespace Raskatova1
 {
-    class Result
-    {
-        public string FullName { get; set; }
-        public int Age { get; set; }
-        public string Rank { get; set; }
-        public int TimeOfStart { get; set; }
-        public int TimeOfFinish { get; set; }
-        public int TotalTime { get; set; }
-    }
-
-    class Database
-    {
-        private SQLiteConnection CONN;
-        private string FileName;
-
-        Database(string FileName)
-        {
-            this.FileName = FileName;
-        }
-
-        public void OpenConnection()
-        {
-            CONN = new SQLiteConnection("Data Source=" + FileName + "; " + "Version=3");
-            CONN.Open();
-        }
-
-        public void CloseConnection()
-        {
-            CONN.Close();
-        }
-
-        public string GetFileName() { return FileName;  }
-        public SQLiteConnection GetCONN() { return CONN; } 
-    }
-
     class Program
     {
-        private static SQLiteConnection DB;
+        private static Database DB;
 
         public static List<Result> NewResult(int numberOfRunners, Random rnd, string fileName)
         {
@@ -73,9 +38,11 @@ namespace Raskatova1
         }
         public static void AgeResult(List<Result> listResult, int ageMin, int ageMax) //сделать вывод из таблицы тут
         {
-            int timeWiner = 20000;
+            int timeWiner = 0;
             int ageWinner = 0;
             string nameWiner = "";
+            bool flag = false;
+
             for (int i = 0; i < listResult.Count; i++)
             {
                 if (listResult[i].Age >= ageMin && listResult[i].Age <= ageMax && (listResult[i].TimeOfFinish - listResult[i].TimeOfStart) < timeWiner)
@@ -83,11 +50,14 @@ namespace Raskatova1
                     timeWiner = listResult[i].TotalTime;
                     nameWiner = listResult[i].FullName;
                     ageWinner = listResult[i].Age;
+                    flag = true;
                 }
             }
-            var ts = TimeSpan.FromSeconds(timeWiner);
-            Console.WriteLine("В возрастной группе " + ageMin + " - " + ageMax + " лет побеждает " + nameWiner + " (" + ageWinner + " лет) с результатом " + "{0}:{1}:{2}", ts.Hours, ts.Minutes, ts.Seconds);
+            TimeSpan ts = TimeSpan.FromSeconds(timeWiner);
+            if(flag) Console.WriteLine("В возрастной группе " + ageMin + " - " + ageMax + " лет побеждает " + nameWiner + " (" + ageWinner + " лет) с результатом " + "{0}:{1}:{2}", ts.Hours, ts.Minutes, ts.Seconds);
+            else Console.WriteLine("В возрастной группе " + ageMin + " - " + ageMax + " лет нет атлетов");
         }
+
         public static int FinishTime(string rank, int age, Random rnd)
         {
             int finish;
@@ -122,12 +92,12 @@ namespace Raskatova1
         }
         public static void SortResult(List<Result> listResult, int ageMin, int ageMax, bool subMenu, int numberOfRunners) //сделать вывод из таблицы тут
         {
+            TimeSpan tsTotal, tsFinish, tsStart;
             var allResultInAge = from age in listResult
                                  where age.Age >= ageMin && age.Age <= ageMax
                                  orderby age.TotalTime ascending
                                  select age;
             Console.WriteLine("Имя бегуна\t\t" + "Возраст\t" + "Время старта\t" + "Время финиша\t" + "Результат");
-            var tsTotal = TimeSpan.FromSeconds(0); var tsFinish = TimeSpan.FromSeconds(0); var tsStart = TimeSpan.FromSeconds(0);
             foreach (Result age in allResultInAge)
             {
                 tsTotal = TimeSpan.FromSeconds(age.TotalTime);
@@ -149,19 +119,18 @@ namespace Raskatova1
             {
                 Console.WriteLine("Чтобы вернуться в подменю введите 1, чтобы вернуться на главное меню нажмите 2");
                 answer = Console.ReadLine();
-                if (answer == "1")
+
+                switch(answer)
                 {
-                    Menu(listResult, true, numberOfRunners);
-                }
-                else if (answer == "2")
-                {
-                    Menu(listResult, false, numberOfRunners);
-                }
-                else
-                {
-                    Console.WriteLine("Ошибка ввода: данного варианта ответа не существует. Возврат в подменю...");
-                    Console.ReadKey();
-                    Menu(listResult, true, numberOfRunners);
+                    case "1":
+                        Menu(listResult, true, numberOfRunners); break;
+                    case "2":
+                        Menu(listResult, false, numberOfRunners); break;
+                    default:
+                        Console.WriteLine("Ошибка ввода: данного варианта ответа не существует. Возврат в подменю...");
+                        Console.ReadKey();
+                        Menu(listResult, true, numberOfRunners);
+                        break;
                 }
             }
             else
@@ -190,105 +159,63 @@ namespace Raskatova1
                 }
                 else answer = "1";
 
-                if (answer == "1") //|| subMenu
+                switch(answer)
                 {
-                    Console.Clear();
-                    AgeResult(listResult, 18, 30);
-                    AgeResult(listResult, 31, 40);
-                    AgeResult(listResult, 41, 50);
-                    AgeResult(listResult, 61, 70);
-                    AgeResult(listResult, 71, 85);
-                    Console.WriteLine("Чтобы узнать полные результаты в конкретной возрастой категории введите ее номер (1-5) или 0 для возврата на главное меню.");
-                    answer = Console.ReadLine();
-                    if (answer == "1")
-                        SortResult(listResult, 18, 30, true, numberOfRunners);
-                    else if (answer == "2")
-                        SortResult(listResult, 31, 40, true, numberOfRunners);
-                    else if (answer == "3")
-                        SortResult(listResult, 41, 50, true, numberOfRunners);
-                    else if (answer == "4")
-                        SortResult(listResult, 61, 70, true, numberOfRunners);
-                    else if (answer == "5")
-                        SortResult(listResult, 71, 85, true, numberOfRunners);
-                    else if (answer == "0")
-                    {
-                        subMenu = false;
-                        Menu(listResult, subMenu, numberOfRunners);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Ошибка ввода: данного варианта ответа не существует. Возврат в подменю...");
+                    case "0":
+                        throw new Exception("Выход из меню");
+                    case "1":
+                        Console.Clear();
+                        AgeResult(listResult, 18, 30);
+                        AgeResult(listResult, 31, 40);
+                        AgeResult(listResult, 41, 50);
+                        AgeResult(listResult, 61, 70);
+                        AgeResult(listResult, 71, 85);
+
+                        Console.WriteLine("Чтобы узнать полные результаты в конкретной возрастой категории введите ее номер (1-5) или 0 для возврата на главное меню.");
+                        answer = Console.ReadLine();
+                        
+                        switch(answer)
+                        {
+                            case "0":
+                                subMenu = false;
+                                Menu(listResult, subMenu, numberOfRunners);
+                                break;
+                            case "1":
+                                SortResult(listResult, 18, 30, true, numberOfRunners); break;
+                            case "2":
+                                SortResult(listResult, 31, 40, true, numberOfRunners); break;
+                            case "3":
+                                SortResult(listResult, 41, 50, true, numberOfRunners); break;
+                            case "4":
+                                SortResult(listResult, 61, 70, true, numberOfRunners); break;
+                            case "5":
+                                SortResult(listResult, 71, 85, true, numberOfRunners); break;
+                            default:
+                                Console.WriteLine("Ошибка ввода: данного варианта ответа не существует. Возврат в подменю...");
+                                Console.ReadKey();
+                                Menu(listResult, true, numberOfRunners);
+                                break;
+                        }
+                        break;
+
+                    case "2":
+                        Console.WriteLine("Результаты:");
+                        SortResult(listResult, 18, 80, false, numberOfRunners);
+                        break;
+
+                    case "3":
+                        Console.WriteLine("Результаты атлетов за всю историю соревнований:");
+                        DB.PrintTable();
+                        CheckSubMenu(listResult, false, numberOfRunners);
                         Console.ReadKey();
-                        Menu(listResult, true, numberOfRunners);
-                    }
-                }
-                else if (answer == "2")
-                {
-                    Console.WriteLine("Результаты:");
-                    SortResult(listResult, 18, 80, false, numberOfRunners);
-                }
-                else if (answer == "3")
-                {
-                    Console.WriteLine("Результаты атлетов за всю историю соревнований:");
-                    ReadBD(listResult, false, numberOfRunners);
-                    Console.ReadKey();
-                }
-                else if (answer == "0")
-                {
-                    throw new Exception("Выход из меню");
-                }
-                else
-                {
-                    Console.WriteLine("Ошибка ввода: данного варианта ответа не существует");
-                    Console.ReadKey();
+                        break;
+                    default:
+                        Console.WriteLine("Ошибка ввода: данного варианта ответа не существует");
+                        Console.ReadKey();
+                        break;
                 }
             }
         }
-
-        public static void ResultToDB(List<Result> listResult)
-        {
-            SQLiteCommand CMD = DB.CreateCommand();
-            for (int i = 0; i < listResult.Count; i++)
-            {
-                CMD.CommandText = "insert into Results(Name, Age, TimeOfStart, TimeOfFinish, TimeOfTotal) values(@name, @age, @timeofstart, @timeoffinish, @timeoftotal)";
-                CMD.Parameters.Add("@name", System.Data.DbType.String).Value = listResult[i].FullName;
-                CMD.Parameters.Add("@age", System.Data.DbType.String).Value = listResult[i].Age;
-                CMD.Parameters.Add("@timeofstart", System.Data.DbType.Int32).Value = listResult[i].TimeOfStart;
-                CMD.Parameters.Add("@timeoffinish", System.Data.DbType.Int32).Value = listResult[i].TimeOfFinish;
-                CMD.Parameters.Add("@timeoftotal", System.Data.DbType.Int32).Value = listResult[i].TotalTime;
-                CMD.ExecuteNonQuery();
-            }
-
-            CMD.Dispose();
-        }
-
-        public static void ReadBD(List<Result> listResult, bool subMenu, int numberOfRunners)
-        {
-            TimeSpan tsTotal, tsFinish, tsStart;
-            SQLiteCommand CMD = new SQLiteCommand("select * from Results", DB);
-            SQLiteDataReader RD = CMD.ExecuteReader(); 
-
-            Console.WriteLine("Имя бегуна\t\t" + "Возраст\t" + "Время старта\t" + "Время финиша\t" + "Результат");
-            if (RD.HasRows)
-            {
-                while (RD.Read())
-                {
-                    tsTotal = TimeSpan.FromSeconds(Convert.ToInt32(RD["TimeOfTotal"]));
-                    tsStart = TimeSpan.FromSeconds(Convert.ToInt32(RD["TimeOfStart"]));
-                    tsFinish = TimeSpan.FromSeconds(Convert.ToInt32(RD["TimeOfFinish"]));
-                    Console.WriteLine($"{RD["Name"],-24}" + RD["Age"]
-                        + "\t" + "{0}:{1}:{2}" + "\t\t" + "{3}:{4}:{5}" + "\t\t" + "{6}:{7}:{8}",
-                        tsStart.Hours, tsStart.Minutes, tsStart.Seconds,
-                        tsFinish.Hours, tsFinish.Minutes, tsFinish.Seconds,
-                        tsTotal.Hours, tsTotal.Minutes, tsTotal.Seconds);
-                }
-
-                RD.Close();
-                CMD.Dispose();
-            }
-            CheckSubMenu(listResult, subMenu, numberOfRunners);
-        }
-
 
         static void Main()
         {
@@ -302,10 +229,10 @@ namespace Raskatova1
                 return;
             }
 
-            DB = new SQLiteConnection("Data Source=" + dbName + "; " + "Version=3"); 
+            DB = new Database(dbName);
             try
             {
-                DB.Open();
+                DB.OpenConnection();
 
                 Console.WriteLine("Соединение с бд установлено. Загружаются новые результаты...");
                 Console.ReadKey();
@@ -313,9 +240,9 @@ namespace Raskatova1
                 Random rnd = new Random();
                 int numberOfRunners = rnd.Next(5, 10);
 
-                List<Result> listResult = NewResult(numberOfRunners, rnd, fileName); 
+                List<Result> listResult = NewResult(numberOfRunners, rnd, fileName);
 
-                ResultToDB(listResult);
+                DB.LoadResults(listResult);
 
                 Console.WriteLine("Результаты загружены в базу данных. Запуск меню...");
                 Console.ReadKey();
@@ -337,7 +264,7 @@ namespace Raskatova1
             }
             finally
             {
-                DB.Close();
+                DB.CloseConnection();
             }
         }
     }
