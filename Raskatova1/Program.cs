@@ -230,7 +230,7 @@ namespace Raskatova1
                 else if (answer == "3")
                 {
                     Console.WriteLine("Результаты атлетов за всю историю соревнований:");
-                    ReadBD();
+                    ReadBD(listResult, false, numberOfRunners);
                     Console.ReadKey();
                 }
                 else if (answer == "0")
@@ -262,7 +262,7 @@ namespace Raskatova1
             CMD.Dispose();
         }
 
-        public static void ReadBD()
+        public static void ReadBD(List<Result> listResult, bool subMenu, int numberOfRunners)
         {
             TimeSpan tsTotal, tsFinish, tsStart;
             SQLiteCommand CMD = new SQLiteCommand("select * from Results", DB);
@@ -286,6 +286,7 @@ namespace Raskatova1
                 RD.Close();
                 CMD.Dispose();
             }
+            CheckSubMenu(listResult, subMenu, numberOfRunners);
         }
 
 
